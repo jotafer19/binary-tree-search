@@ -6,13 +6,9 @@ class Node {
     }
 }
 
-export default class Tree {
+class Tree {
     constructor(array) {
-        this.root = this.buildTree(this.getArray(array));
-    }
-
-    getArray(array) {
-        return this.mergeSort([...new Set(array)]);
+        this.root = this.buildTree(this.sortArray(array));
     }
 
     buildTree(array, start = 0, end = array.length - 1) {
@@ -26,95 +22,61 @@ export default class Tree {
         return node;
     }
 
-    insert(value, root = this.root) {
+    insert(value, node = this.root) {
+        if (!node) return new Node(value);
 
-        if (!this.root) return this.root = new Node(value);
-
-        if (!root) return root = new Node(value);
-
-        if (value < root.data) {
-            root.left = this.insert(value, root.left);
-        } else if (value > root.data) {
-            root.right = this.insert(value, root.right);
+        if (value < node.data) {
+            node.left = this.insert(value, node.left);
+        } else if (value > node.data) {
+            node.right = this.insert(value, node.right);
         }
 
-        return root;
+        return node;
     }
 
-    delete(value, root = this.root) {
-        if (!root) return null;
+    delete(value, node = this.root) {
+        if (!node) return null;
 
-        if (value < root.data) {
-            root.left = this.delete(value, root.left);
-            return root;
-        } else if (value > root.data) {
-            root.right = this.delete(value, root.right);
-            return root;
+        if (value < node.data) {
+            node.left = this.delete(value, node.left);
+            return node;
+        } else if (value > node.data) {
+            node.right = this.delete(value, node.right);
+            return node;
         }
 
-        if (!root.left) {
-            return root.right;
-        } else if (!root.right) {
-            return root.left;
+        if (!node.left) {
+            return node.right;
+        } else if (!node.right) {
+            return node.left;
         } else {
-            let parentNode = root;
-            let successorNode = root.right;
-
+            let successorNode = node.right
+    
             while (successorNode.left) {
-                parentNode = successorNode;
-                successorNode = successorNode.left;
+                successorNode = successorNode.left
             }
-
-            if (parentNode !== root) {
-                parentNode.left = successorNode.right;
-            } else {
-                parentNode.right = successorNode.right;
-            }
-            
-            root.data = successorNode.data;
-
-            return root;
+    
+            node.data = successorNode.data;
+            node.right = this.delete(successorNode.data, node.right);
+    
+            return node;
         }
     }
 
-    find(value, root = this.root) {
-        if (!root) return false;
+    find(value, node = this.root) {
+        if (!node) return false;
 
-        if (value < root.data) {
-            return this.find(value, root.left);
-        } else if (value > root.data) {
-            return this.find(value, root.right)
+        if (value < node.data) {
+            return this.find(value, node.left);
+        } else if (value > node.data) {
+            return this.find(value, node.right);
         }
 
-        return true;
-    }
-
-    mergeSort(array) {
-        if (array.length <= 1) return array;
-
-        const midPoint = Math.round(array.length / 2);
-        const leftHalf = this.mergeSort(array.slice(0, midPoint));
-        const rightHalf = this.mergeSort(array.slice(midPoint));
-
-        return this.sort(leftHalf, rightHalf);
-    }
-
-    sort(leftHalf, rightHalf) {
-        const array = [];
-
-        while (leftHalf.length > 0 && rightHalf.length > 0) {
-            if (leftHalf[0] < rightHalf[0]) {
-                array.push(leftHalf.shift());
-            } else {
-                array.push(rightHalf.shift());
-            }
-        }
-
-        return array.concat(leftHalf, rightHalf);
+        return node;
     }
 
     levelOrder(callback, array = [], queue = [this.root]) {
-        if (!this.root || !queue.length) return;
+        if (!queue.length) return;
 
         const shiftedNode = queue.shift();
 
@@ -123,32 +85,17 @@ export default class Tree {
         } else {
             array.push(shiftedNode.data);
         }
-
+        
+        
         if (shiftedNode.left) queue.push(shiftedNode.left);
         if (shiftedNode.right) queue.push(shiftedNode.right);
 
         this.levelOrder(callback, array, queue);
-        
-        return array;
+
+        if (!callback) return array;
     }
 
-    inOrder(callback, node = this.root, array = []) {
-        if (!node) return;
-
-        this.inOrder(callback, node.left, array);
-
-        if (callback) {
-            callback(node);
-        } else {
-            array.push(node.data);
-        }
-
-        this.inOrder(callback, node.right, array);
-        
-        return array;
-    }
-
-    preOrder(callback, node = this.root, array = []) {
+    preOrder(callback, array = [], node = this.root) {
         if (!node) return;
 
         if (callback) {
@@ -156,59 +103,80 @@ export default class Tree {
         } else {
             array.push(node.data);
         }
+        this.preOrder(callback, array, node.left);
+        this.preOrder(callback, array, node.right);
         
-        this.preOrder(callback, node.left, array);
-        this.preOrder(callback, node.right, array);
-
-        return array;
+        if (!callback) return array;
     }
 
-    postOrder(callback, node = this.root, array = []) {
+    inOrder(callback, array = [], node = this.root) {
         if (!node) return;
 
-        this.postOrder(callback, node.left, array);
-        this.postOrder(callback, node.right, array);
+        this.inOrder(callback, array, node.left)
+        if (callback) {
+            callback(node);
+        } else {
+            array.push(node.data);
+        }
+        this.inOrder(callback, array, node.right)
 
+        if (!callback) return array;
+    }
+
+    postOrder(callback, array = [], node = this.root) {
+        if (!node) return;
+
+        this.postOrder(callback, array, node.left);
+        this.postOrder(callback, array, node.right);
         if (callback) {
             callback(node);
         } else {
             array.push(node.data);
         }
 
-        return array;
+        if (!callback) return array;
     }
 
     height(node = this.root) {
         if (!node) return -1;
-        
+
         const leftHeight = this.height(node.left);
         const rightHeight = this.height(node.right);
 
         return Math.max(leftHeight, rightHeight) + 1;
     }
 
-    depth(value, node = this.root) {
-        if (!this.find(value)) return;
+    heightForNode(value) {
+        return this.height(this.find(value));
+    }
 
-        let count = 0;
+    depth(value, node = this.root, depth = 0) {
+        if (!this.find(value)) return null;
 
         if (value < node.data) {
-            count = this.depth(value, node.left) + 1;
+            return this.depth(value, node.left, depth += 1);
         } else if (value > node.data) {
-            count = this.depth(value, node.right) + 1;
+            return this.depth(value, node.right, depth += 1);
         }
 
-        return count;
+        return depth;
     }
 
     isBalanced(node = this.root) {
-        const leftHeight = this.height(node.left);
-        const rightHeight = this.height(node.right);
-        return Math.abs(leftHeight - rightHeight) <= 1;
+        if (!node) return false;
+
+        const leftTree = this.height(node.left);
+        const rightTree = this.height(node.right);
+
+        return Math.abs(leftTree - rightTree) <= 1;
     }
 
     reBalance() {
-        if (!this.isBalanced()) this.root = this.buildTree(this.mergeSort(this.levelOrder()))
+        if (!this.isBalanced()) this.root = this.buildTree(this.sortArray(this.inOrder()))
+    }
+
+    sortArray(array) {
+        return [... new Set(array)].sort((a, b) => a - b);
     }
 
     prettyPrint(node = this.root, prefix = "", isLeft = true) {
@@ -222,5 +190,5 @@ export default class Tree {
         if (node.left !== null) {
           this.prettyPrint(node.left, `${prefix}${isLeft ? "    " : "│   "}`, true);
         }
-      };   
+      };
 }
